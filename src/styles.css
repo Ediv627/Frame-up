@@ -1,0 +1,188 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* FRAME UP — Cream & Ink Design System
+ * Warm cream paper, deep ink, subtle gold accents.
+ * Bold display type to echo the FRAME UP logo.
+ * All colors in oklch.
+ */
+
+@layer base {
+  @font-face {
+    font-family: "Archivo Black";
+    src: url("https://fonts.gstatic.com/s/archivoblack/v21/HTxqL289NzCGg4MzN6KJ7eW6CYyF.woff2") format("woff2");
+    font-display: swap;
+    font-weight: 400;
+  }
+  @font-face {
+    font-family: "Hind";
+    src: url("https://fonts.gstatic.com/s/hind/v17/5aU19_a8oxmIfMJaIRuYjDpb.woff2") format("woff2");
+    font-display: swap;
+    font-weight: 400;
+  }
+  @font-face {
+    font-family: "Hind";
+    src: url("https://fonts.gstatic.com/s/hind/v17/5aU69_a8oxmIRG5yBROzkDM.woff2") format("woff2");
+    font-display: swap;
+    font-weight: 700;
+  }
+  @font-face {
+    font-family: "Cairo";
+    src: url("https://fonts.gstatic.com/s/cairo/v28/SLXgc1nY6HkvalIhTpumxdt0UX8gfQ.woff2") format("woff2");
+    font-display: swap;
+    font-weight: 200 1000;
+  }
+}
+
+@theme inline {
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+
+  --font-display: "Archivo Black", "Cairo", system-ui, sans-serif;
+  --font-sans: "Hind", "Cairo", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-cream: var(--cream);
+}
+
+:root {
+  --radius: 4px;
+
+  /* Paper & Ink palette — #f5f3ee, #e8e4dd, #2d2d2d, #0d0d0d */
+  --cream: oklch(0.964 0.005 85);          /* #f5f3ee paper */
+  --paper: oklch(0.985 0.003 85);          /* lighter paper for cards */
+  --ink: oklch(0.145 0 0);                 /* #0d0d0d deep ink */
+
+  --background: var(--cream);
+  --foreground: var(--ink);
+
+  --card: var(--paper);
+  --card-foreground: var(--ink);
+  --popover: var(--paper);
+  --popover-foreground: var(--ink);
+
+  --primary: var(--ink);
+  --primary-foreground: var(--cream);
+
+  --secondary: oklch(0.91 0.005 85);       /* #e8e4dd warm grey */
+  --secondary-foreground: var(--ink);
+
+  --muted: oklch(0.93 0.004 85);
+  --muted-foreground: oklch(0.32 0 0);     /* #2d2d2d soft ink */
+
+  --accent: oklch(0.91 0.005 85);
+  --accent-foreground: var(--ink);
+
+  --destructive: oklch(0.55 0.18 25);
+  --destructive-foreground: oklch(1 0 0);
+
+  --border: oklch(0.86 0.004 85);
+  --input: oklch(0.86 0.004 85);
+  --ring: var(--ink);
+}
+
+.dark {
+  --background: oklch(0.14 0.005 60);
+  --foreground: oklch(0.96 0.015 85);
+  --card: oklch(0.18 0.005 60);
+  --card-foreground: oklch(0.96 0.015 85);
+  --popover: oklch(0.18 0.005 60);
+  --popover-foreground: oklch(0.96 0.015 85);
+  --primary: oklch(0.96 0.015 85);
+  --primary-foreground: oklch(0.14 0.005 60);
+  --secondary: oklch(0.2 0.005 60);
+  --secondary-foreground: oklch(0.96 0.015 85);
+  --muted: oklch(0.22 0.005 60);
+  --muted-foreground: oklch(0.65 0.005 60);
+  --accent: oklch(0.24 0.005 60);
+  --accent-foreground: oklch(0.96 0.015 85);
+  --border: oklch(0.28 0.005 60);
+  --input: oklch(0.28 0.005 60);
+  --ring: oklch(0.7 0.005 60);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  html[dir="rtl"] body {
+    font-family: "Hind", "Cairo", system-ui, sans-serif;
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
+  ::selection {
+    background-color: var(--color-foreground);
+    color: var(--color-background);
+  }
+}
+
+@layer components {
+  .display {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+  .display-ar {
+    font-family: "Archivo Black", "Cairo", system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+  .label {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    color: var(--color-muted-foreground);
+  }
+  .brutal-border {
+    border: 1px solid var(--color-border);
+  }
+  .brutal-shadow,
+  .brutal-shadow-sm {
+    box-shadow: none;
+  }
+  .marquee {
+    animation: marquee 60s linear infinite;
+  }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+}
