@@ -6,6 +6,7 @@ import { LogOut, Package, User as UserIcon } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/account")({
+  head: () => ({ meta: [{ title: "حسابي — FRAME UP" }] }),
   component: AccountPage,
 });
 
@@ -150,9 +151,7 @@ function AccountPage() {
                 {orders.map((o) => (
                   <li key={o.id} className="py-4 flex items-center justify-between gap-4">
                     <div>
-                      <p className="text-sm font-semibold font-mono">
-                        #{o.id.slice(0, 8).toUpperCase()}
-                      </p>
+                      <p className="text-sm font-semibold font-mono tracking-widest">{(o as any).order_code ?? `#${o.id.slice(0, 8).toUpperCase()}`}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {new Date(o.created_at).toLocaleDateString("ar-EG", {
                           year: "numeric",
@@ -185,7 +184,9 @@ const statusLabels: Record<string, { label: string; cls: string }> = {
 function StatusBadge({ status }: { status: string }) {
   const s = statusLabels[status] ?? statusLabels.pending;
   return (
-    <span className={`text-[11px] rounded-full px-2.5 py-1 font-semibold ${s.cls}`}>{s.label}</span>
+    <span className={`text-[11px] rounded-full px-2.5 py-1 font-semibold ${s.cls}`}>
+      {s.label}
+    </span>
   );
 }
 
