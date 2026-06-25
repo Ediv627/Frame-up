@@ -20,6 +20,7 @@ function CheckoutPage() {
   const [placing, setPlacing] = useState(false);
   const [done, setDone] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [orderCode, setOrderCode] = useState<string | null>(null);
 
   // Form state
   const [fullName, setFullName] = useState("");
@@ -30,12 +31,22 @@ function CheckoutPage() {
   const [notes, setNotes] = useState("");
   const [shippingRates, setShippingRates] = useState(EGYPT_GOVERNORATE_SHIPPING);
 
+  const [whatsappPhone, setWhatsappPhone] = useState<string>("");
+
   // Prefill from profile
   useEffect(() => {
     fetchShippingRates().then((rates) => {
       const activeRates = rates.filter((rate) => rate.active !== false);
       setShippingRates(activeRates.length > 0 ? activeRates : EGYPT_GOVERNORATE_SHIPPING);
     });
+    (supabase as any)
+      .from("site_settings")
+      .select("value")
+      .eq("key", "whatsapp_phone")
+      .maybeSingle()
+      .then(({ data }: { data: { value: string } | null }) => {
+        if (data?.value) setWhatsappPhone(data.value.replace(/\D/g, ""));
+      });
   }, []);
 
   useEffect(() => {
@@ -56,15 +67,20 @@ function CheckoutPage() {
     return (
       <div className="mx-auto max-w-2xl px-6 py-24 text-center">
         <p className="text-2xl font-semibold">لا يوجد ما يمكن دفعه.</p>
-        <Link
-          to="/shop"
-          className="mt-6 inline-block rounded-full bg-foreground px-5 py-3 text-sm font-semibold text-background"
-        >
+        <Link to="/shop" className="mt-6 inline-block rounded-full bg-foreground px-5 py-3 text-sm font-semibold text-background">
           ابحث عن شيء
         </Link>
       </div>
     );
   }
+
+  const shortOrderId = orderCode ?? (orderId ? orderId.slice(0, 8).toUpperCase() : "");
+  const waMessage = shortOrderId
+    ? `أهلاً، رقم الأوردر بتاعي: ${shortOrderId}`
+    : "";
+  const waHref = whatsappPhone
+    ? `https://wa.me/${whatsappPhone}${waMessage ? `?text=${encodeURIComponent(waMessage)}` : ""}`
+    : "";
 
   if (done) {
     return (
@@ -72,20 +88,40 @@ function CheckoutPage() {
         <div className="mx-auto h-16 w-16 rounded-full border border-border flex items-center justify-center">
           <Check className="h-8 w-8" />
         </div>
-        <h1 className="display-ar text-[clamp(2rem,5vw,3.5rem)] font-black mt-8">تم تأكيد الطلب</h1>
+        <h1 className="display-ar text-[clamp(2rem,5vw,3.5rem)] font-black mt-8">تم استلام طلبك</h1>
         <p className="mt-4 text-muted-foreground">
-          شكراً لك! سنتواصل معك قريباً لتأكيد التوصيل. الدفع عند الاستلام.
+          شكراً لك! لإتمام الطلب أرسل رقم الأوردر على الواتساب.
         </p>
-        {orderId && (
-          <div className="mt-6 rounded-xl border-2 border-foreground bg-secondary/30 p-5 inline-block w-full max-w-sm mx-auto">
-            <p className="text-xs text-muted-foreground mb-2 text-center">
-              رقم طلبك — احتفظ به للتتبع
+        {shortOrderId && (
+          <div className="mt-6 mx-auto max-w-xs rounded-xl border-2 border-foreground/20 bg-secondary/30 p-4">
+            <p className="text-xs text-muted-foreground mb-1">رقم الطلب</p>
+            <p className="font-mono text-3xl font-black tracking-[0.25em]">{shortOrderId}</p>
+          </div>
+        )}
+
+        {whatsappPhone && (
+          <div className="mt-8 mx-auto max-w-md rounded-xl border-2 border-[#25D366]/30 bg-[#25D366]/5 p-5 text-right">
+            <p className="text-sm font-semibold mb-3 text-center">
+              ⚠️ لتأكيد طلبك، أرسل رقم الأوردر على واتساب على الرقم:
             </p>
-            <p className="font-mono font-black text-2xl tracking-widest text-center break-all">
-              {orderId}
+            <p className="text-center font-mono text-lg font-bold mb-4" dir="ltr">+{whatsappPhone}</p>
+            <a
+              href={waHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full rounded-full bg-[#25D366] px-5 py-3 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+              </svg>
+              إرسال رقم الأوردر على واتساب
+            </a>
+            <p className="mt-3 text-xs text-muted-foreground text-center">
+              لن يتم تأكيد الطلب نهائياً إلا بعد إرسال رقم الأوردر على الواتساب.
             </p>
           </div>
         )}
+
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           {user && (
             <Link
@@ -95,6 +131,12 @@ function CheckoutPage() {
               عرض طلباتي
             </Link>
           )}
+          <Link
+            to="/track"
+            className="rounded-full border border-border px-5 py-3 text-sm font-semibold hover:bg-secondary transition-colors"
+          >
+            تتبع الطلب
+          </Link>
           <Link
             to="/"
             className="rounded-full bg-foreground px-5 py-3 text-sm font-semibold text-background hover:opacity-90 transition-opacity"
@@ -127,7 +169,7 @@ function CheckoutPage() {
           shipping,
           total,
         })
-        .select("id")
+        .select("id, order_code")
         .single();
 
       if (orderError) throw orderError;
@@ -160,14 +202,16 @@ function CheckoutPage() {
       }
 
       setOrderId(order.id);
+      setOrderCode((order as any).order_code ?? null);
       clear();
       setDone(true);
       window.scrollTo({ top: 0 });
     } catch (err) {
       const raw = err instanceof Error ? err.message : "حدث خطأ";
       // Friendly mapping for stock errors raised by the DB trigger
-      const msg =
-        raw.includes("غير متوفرة") || raw.includes("المتاح") ? raw : `فشل تأكيد الطلب: ${raw}`;
+      const msg = raw.includes("غير متوفرة") || raw.includes("المتاح")
+        ? raw
+        : `فشل تأكيد الطلب: ${raw}`;
       toast.error(msg);
     } finally {
       setPlacing(false);
@@ -198,12 +242,7 @@ function CheckoutPage() {
           <Section title="معلومات التواصل">
             <Field label="الاسم الكامل" value={fullName} onChange={setFullName} required />
             <Field label="رقم الموبايل" type="tel" value={phone} onChange={setPhone} required />
-            <Field
-              label="البريد الإلكتروني (اختياري)"
-              type="email"
-              value={email}
-              onChange={setEmail}
-            />
+            <Field label="البريد الإلكتروني (اختياري)" type="email" value={email} onChange={setEmail} />
           </Section>
 
           <Section title="عنوان الشحن">
@@ -224,9 +263,7 @@ function CheckoutPage() {
               </select>
             </label>
             <label className="block">
-              <span className="text-xs text-muted-foreground block mb-2">
-                ملاحظات للطلب (اختياري)
-              </span>
+              <span className="text-xs text-muted-foreground block mb-2">ملاحظات للطلب (اختياري)</span>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
@@ -257,9 +294,7 @@ function CheckoutPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold truncate">{l.product.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {l.size} · ×{l.quantity}
-                    </p>
+                    <p className="text-xs text-muted-foreground">{l.size} · ×{l.quantity}</p>
                   </div>
                   <p className="text-sm font-semibold">{l.lineTotal} ج.م</p>
                 </li>
@@ -267,15 +302,22 @@ function CheckoutPage() {
             </ul>
             <div className="border-t border-border pt-4 space-y-2">
               <Row label="الإجمالي الفرعي" value={`${subtotal} ج.م`} />
-              <Row
-                label={`الشحن إلى ${city}`}
-                value={shipping === 0 ? "مجاني" : `${shipping} ج.م`}
-              />
+              <Row label={`الشحن إلى ${city}`} value={shipping === 0 ? "مجاني" : `${shipping} ج.م`} />
               <div className="flex items-baseline justify-between pt-3 border-t border-border">
                 <p className="text-base font-semibold">الإجمالي</p>
                 <p className="text-2xl font-bold">{total} ج.م</p>
               </div>
             </div>
+            {whatsappPhone && (
+              <div className="mt-6 rounded-lg border border-[#25D366]/30 bg-[#25D366]/5 p-3 text-xs leading-relaxed">
+                <p className="font-semibold mb-1">📱 بعد تأكيد الطلب:</p>
+                <p className="text-muted-foreground">
+                  أرسل رقم الأوردر على واتساب على الرقم{" "}
+                  <span className="font-mono font-semibold text-foreground" dir="ltr">+{whatsappPhone}</span>{" "}
+                  لإتمام الطلب.
+                </p>
+              </div>
+            )}
             <button
               type="submit"
               disabled={placing}
