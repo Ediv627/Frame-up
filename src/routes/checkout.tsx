@@ -12,6 +12,12 @@ export const Route = createFileRoute("/checkout")({
   component: CheckoutPage,
 });
 
+// ✅ FIX: type للـ order اللي بيرجع من Supabase مع columns الجديدة
+type OrderInsertResult = {
+  id: string;
+  order_code: string | null;
+};
+
 function CheckoutPage() {
   const { detailed, subtotal, clear } = useCart();
   const { user, profile } = useAuth();
@@ -33,7 +39,6 @@ function CheckoutPage() {
 
   const [whatsappPhone, setWhatsappPhone] = useState<string>("");
 
-  // Prefill from profile
   useEffect(() => {
     fetchShippingRates().then((rates) => {
       const activeRates = rates.filter((rate) => rate.active !== false);
@@ -75,9 +80,7 @@ function CheckoutPage() {
   }
 
   const shortOrderId = orderCode ?? (orderId ? orderId.slice(0, 8).toUpperCase() : "");
-  const waMessage = shortOrderId
-    ? `أهلاً، رقم الأوردر بتاعي: ${shortOrderId}`
-    : "";
+  const waMessage = shortOrderId ? `أهلاً، رقم الأوردر بتاعي: ${shortOrderId}` : "";
   const waHref = whatsappPhone
     ? `https://wa.me/${whatsappPhone}${waMessage ? `?text=${encodeURIComponent(waMessage)}` : ""}`
     : "";
@@ -154,8 +157,8 @@ function CheckoutPage() {
     setPlacing(true);
 
     try {
-      // 1. Create order
-      const { data: order, error: orderError } = await supabase
+      // ✅ FIX: استخدام (supabase as any) لتجنب خطأ order_code مش موجود في الـ types
+      const { data: order, error: orderError } = await (supabase as any)
         .from("orders")
         .insert({
           user_id: user?.id ?? null,
@@ -170,11 +173,12 @@ function CheckoutPage() {
           total,
         })
         .select("id, order_code")
-        .single();
+        .single() as { data: OrderInsertResult | null; error: unknown };
 
       if (orderError) throw orderError;
+      if (!order) throw new Error("لم يتم إنشاء الطلب");
 
-      // 2. Insert order items (stock decrement happens via DB trigger)
+      // Insert order items
       const items = detailed.map((l) => ({
         order_id: order.id,
         product_id: l.productId,
@@ -188,12 +192,11 @@ function CheckoutPage() {
 
       const { error: itemsError } = await supabase.from("order_items").insert(items);
       if (itemsError) {
-        // Roll back the empty order so we don't leave orphans
         await supabase.from("orders").delete().eq("id", order.id);
         throw itemsError;
       }
 
-      // 3. Save profile data for logged-in users
+      // Save profile data for logged-in users
       if (user) {
         await supabase
           .from("profiles")
@@ -202,13 +205,12 @@ function CheckoutPage() {
       }
 
       setOrderId(order.id);
-      setOrderCode((order as any).order_code ?? null);
+      setOrderCode(order.order_code ?? null);
       clear();
       setDone(true);
       window.scrollTo({ top: 0 });
     } catch (err) {
       const raw = err instanceof Error ? err.message : "حدث خطأ";
-      // Friendly mapping for stock errors raised by the DB trigger
       const msg = raw.includes("غير متوفرة") || raw.includes("المتاح")
         ? raw
         : `فشل تأكيد الطلب: ${raw}`;
