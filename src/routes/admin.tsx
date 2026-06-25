@@ -594,7 +594,6 @@ function ProductFormDialog({
             />
           </div>
 
-          {/* Stock management */}
           <div className="rounded-lg border border-border bg-secondary/30 p-4 space-y-4">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold">إدارة المخزون</p>
@@ -673,6 +672,7 @@ function ProductFormDialog({
 /* ============ ORDERS TAB ============ */
 type AdminOrder = {
   id: string;
+  order_code: string;
   created_at: string;
   status: string;
   total: number;
@@ -691,6 +691,9 @@ type OrderItem = {
   product_image: string | null;
 };
 
+// ✅ FIX: استخدام (supabase as any) لتجنب أخطاء TypeScript مع columns الجديدة
+const ordersDb = supabase as any;
+
 function OrdersTab() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -698,12 +701,12 @@ function OrdersTab() {
 
   const reload = () => {
     setLoading(true);
-    supabase
+    ordersDb
       .from("orders")
-      .select("id, created_at, status, total, customer_name, customer_phone, city, whatsapp_confirmed")
+      .select("id, order_code, created_at, status, total, customer_name, customer_phone, city, whatsapp_confirmed")
       .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        setOrders((data as AdminOrder[]) ?? []);
+      .then(({ data }: { data: AdminOrder[] | null }) => {
+        setOrders(data ?? []);
         setLoading(false);
       });
   };
@@ -711,9 +714,9 @@ function OrdersTab() {
   useEffect(reload, []);
 
   const updateStatus = async (id: string, status: string) => {
-    const { error } = await supabase
+    const { error } = await ordersDb
       .from("orders")
-      .update({ status: status as "pending" | "confirmed" | "shipped" | "delivered" | "cancelled" })
+      .update({ status })
       .eq("id", id);
     if (error) {
       toast.error("فشل التحديث");
@@ -723,8 +726,9 @@ function OrdersTab() {
     }
   };
 
+  // ✅ FIX: استخدام ordersDb بدل supabase لتجنب خطأ whatsapp_confirmed
   const confirmWhatsapp = async (id: string) => {
-    const { error } = await supabase
+    const { error } = await ordersDb
       .from("orders")
       .update({ whatsapp_confirmed: true, status: "confirmed" })
       .eq("id", id);
@@ -776,7 +780,9 @@ function OrdersTab() {
               {orders.map((o) => (
                 <tr key={o.id} className="border-t border-border">
                   <Td>
-                    <span className="font-mono text-sm font-bold tracking-widest">{(o as any).order_code ?? `#${o.id.slice(0, 8).toUpperCase()}`}</span>
+                    <span className="font-mono text-sm font-bold tracking-widest">
+                      {o.order_code ?? `#${o.id.slice(0, 8).toUpperCase()}`}
+                    </span>
                   </Td>
                   <Td>{new Date(o.created_at).toLocaleDateString("ar-EG")}</Td>
                   <Td>
@@ -860,7 +866,12 @@ function OrderDetailDialog({ order, onClose }: { order: AdminOrder; onClose: () 
     <div className="fixed inset-0 z-50 bg-foreground/40 backdrop-blur-sm flex items-center justify-center p-4 overflow-auto">
       <div className="bg-background rounded-xl border border-border max-w-2xl w-full my-8 max-h-[90vh] overflow-auto">
         <div className="sticky top-0 bg-background border-b border-border px-6 py-4 flex items-center justify-between">
-          <p className="font-semibold">تفاصيل الطلب <span className="font-mono tracking-widest">{(order as any).order_code ?? `#${order.id.slice(0, 8).toUpperCase()}`}</span></p>
+          <p className="font-semibold">
+            تفاصيل الطلب{" "}
+            <span className="font-mono tracking-widest">
+              {order.order_code ?? `#${order.id.slice(0, 8).toUpperCase()}`}
+            </span>
+          </p>
           <button
             onClick={onClose}
             className="h-8 w-8 rounded-full hover:bg-secondary inline-flex items-center justify-center"
@@ -1487,7 +1498,6 @@ function ContactTab() {
 
   return (
     <div className="max-w-2xl space-y-10">
-      {/* WhatsApp */}
       <section className="space-y-5">
         <div>
           <p className="text-base font-semibold mb-1">زر واتساب العائم</p>
@@ -1495,7 +1505,6 @@ function ContactTab() {
             الرقم الذي يظهر في زر التواصل أسفل الصفحة. أدخله بصيغة دولية بدون + (مثال: 201001234567)
           </p>
         </div>
-
         <label className="block">
           <span className="text-xs text-muted-foreground block mb-2">رقم الواتساب</span>
           <input
@@ -1507,7 +1516,6 @@ function ContactTab() {
             className="w-full rounded-md border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:border-foreground"
           />
         </label>
-
         <label className="block">
           <span className="text-xs text-muted-foreground block mb-2">الرسالة الافتراضية (اختياري)</span>
           <textarea
@@ -1518,7 +1526,6 @@ function ContactTab() {
             className="w-full rounded-md border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:border-foreground"
           />
         </label>
-
         {preview && (
           <div className="rounded-lg border border-border bg-secondary/40 p-4 text-sm">
             <p className="text-xs text-muted-foreground mb-2">معاينة الرابط</p>
@@ -1535,7 +1542,6 @@ function ContactTab() {
         )}
       </section>
 
-      {/* Contact info */}
       <section className="space-y-5 border-t border-border pt-8">
         <div>
           <p className="text-base font-semibold mb-1">بيانات التواصل</p>
@@ -1543,7 +1549,6 @@ function ContactTab() {
             تظهر في صفحة "تواصل معنا" والفوتر. اتركها فارغة إذا لم ترغب في عرضها.
           </p>
         </div>
-
         <label className="block">
           <span className="text-xs text-muted-foreground block mb-2">البريد الإلكتروني</span>
           <input
@@ -1555,7 +1560,6 @@ function ContactTab() {
             className="w-full rounded-md border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:border-foreground"
           />
         </label>
-
         <label className="block">
           <span className="text-xs text-muted-foreground block mb-2">رقم الهاتف</span>
           <input
@@ -1567,7 +1571,6 @@ function ContactTab() {
             className="w-full rounded-md border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:border-foreground"
           />
         </label>
-
         <label className="block">
           <span className="text-xs text-muted-foreground block mb-2">العنوان</span>
           <textarea
@@ -1580,13 +1583,11 @@ function ContactTab() {
         </label>
       </section>
 
-      {/* Social */}
       <section className="space-y-5 border-t border-border pt-8">
         <div>
           <p className="text-base font-semibold mb-1">روابط السوشيال ميديا</p>
           <p className="text-xs text-muted-foreground">روابط كاملة تبدأ بـ https://</p>
         </div>
-
         <label className="block">
           <span className="text-xs text-muted-foreground block mb-2">فيسبوك</span>
           <input
@@ -1598,7 +1599,6 @@ function ContactTab() {
             className="w-full rounded-md border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:border-foreground"
           />
         </label>
-
         <label className="block">
           <span className="text-xs text-muted-foreground block mb-2">إنستغرام</span>
           <input
